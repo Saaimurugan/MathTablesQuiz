@@ -39,6 +39,9 @@
             border-top: 1px solid #ddd;
             padding-top: 10px;
         }
+        .controls {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -51,6 +54,11 @@
         
         <div class="timer">
             <p>Timer: <span id="timer">1</span> seconds</p>
+        </div>
+
+        <div class="controls">
+            <button onclick="pauseTimer()">Pause</button>
+            <button onclick="resumeTimer()">Resume</button>
         </div>
 
         <div class="score">
@@ -72,6 +80,7 @@
         let num1, num2;
         let timerCount = 1;
         let timerInterval;
+        let isPaused = false;
 
         // Generate a random multiplication question
         function generateQuestion() {
@@ -90,14 +99,24 @@
             
             clearInterval(timerInterval); // Clear any existing timer
             timerInterval = setInterval(() => {
-                if (timerCount < 5) {
+                if (!isPaused && timerCount < 5) {
                     timerCount++;
                     document.getElementById("timer").innerText = timerCount;
-                } else {
+                } else if (timerCount >= 5) {
                     clearInterval(timerInterval); // Stop the timer
                     markIncorrect(); // Mark the question incorrect if time runs out
                 }
             }, 1000);
+        }
+
+        // Pause the timer
+        function pauseTimer() {
+            isPaused = true;
+        }
+
+        // Resume the timer
+        function resumeTimer() {
+            isPaused = false;
         }
 
         // Check the user's answer
