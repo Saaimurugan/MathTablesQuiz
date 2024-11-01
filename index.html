@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Tables Learning with Timer</title>
+    <title>Tables Game</title>
     <style>
+	    .resume-btn {
+            display: none;
+        }
+		
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -160,11 +164,26 @@
         .history {
             display: none;
         }
+        /* Print styles to only print the answer history */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .history, .history * {
+                visibility: visible;
+            }
+            .history {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Math Tables Learning</h1>
+        <h1>Tables Game</h1>
         <p>Answer the multiplication question below:</p>
         <p id="countdown"></p>
         <p id="question"></p>
@@ -194,9 +213,11 @@
         <div class="history" id="historySection">
             <h3>Answer History</h3>
             <div class="history-list" id="historyList"></div>
+            <button class="print-btn" onclick="printHistory()">Print History</button>
         </div>
         
         <button class="print-btn" onclick="printResults()" style="display: none;" id="printButton">Print Results</button>
+		<p>Developed by, Shrevatsa, 10th Grade, Narayana Olympiad School, Pallikarani", Incase of issues, please email "shrevatsas@gmail.com"</p>
     </div>
 
     <script>
@@ -258,12 +279,16 @@
 
         function pauseTimer() {
             isPaused = true;
+			document.querySelector('.pause-btn').style.display = 'none';
+            document.querySelector('.resume-btn').style.display = 'inline-block';
             pauseCount++;
             addToHistory("Pause", `Paused at question: ${num1} x ${num2}`);
         }
 
         function resumeTimer() {
             isPaused = false;
+			document.querySelector('.pause-btn').style.display = 'inline-block';
+            document.querySelector('.resume-btn').style.display = 'none';
             resumeCount++;
             addToHistory("Resume", `Resumed with question: ${num1} x ${num2}`);
             generateQuestion();
@@ -349,6 +374,13 @@
 
         function printResults() {
             window.print();
+        }
+
+        function printHistory() {
+            const printButton = document.querySelector(".print-btn");
+            printButton.style.display = "none";  // Hide print button before printing history
+            window.print();
+            printButton.style.display = "block";  // Show print button after printing history
         }
 
         document.getElementById("answerInput").addEventListener("keyup", function(event) {
