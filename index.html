@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Tables Learning with Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .score, .timer, .feedback, .history {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+        .feedback {
+            color: #333;
+            font-weight: bold;
+        }
+        .history-list {
+            text-align: left;
+            margin-top: 10px;
+            font-size: 0.9em;
+            max-height: 150px;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Math Tables Learning</h1>
+        <p>Answer the multiplication question below:</p>
+        <p id="question"></p>
+        <input type="number" id="answerInput" placeholder="Your answer">
+        <button onclick="checkAnswer()">Submit</button>
+        
+        <div class="timer">
+            <p>Timer: <span id="timer">1</span> seconds</p>
+        </div>
+
+        <div class="score">
+            <p>Correct Answers: <span id="correctCount">0</span></p>
+            <p>Incorrect Answers: <span id="incorrectCount">0</span></p>
+        </div>
+        
+        <div class="feedback" id="feedbackMessage"></div>
+
+        <div class="history">
+            <h3>Answer History</h3>
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let num1, num2;
+        let timerCount = 1;
+        let timerInterval;
+
+        // Generate a random multiplication question
+        function generateQuestion() {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            document.getElementById("question").innerText = `What is ${num1} x ${num2}?`;
+            document.getElementById("answerInput").value = ""; // Clear input field
+            document.getElementById("feedbackMessage").innerText = ""; // Clear feedback message
+            startTimer(); // Start the timer for each new question
+        }
+
+        // Start the timer from 1 to 5 seconds
+        function startTimer() {
+            timerCount = 1; // Reset timer to 1
+            document.getElementById("timer").innerText = timerCount;
+            
+            clearInterval(timerInterval); // Clear any existing timer
+            timerInterval = setInterval(() => {
+                if (timerCount < 5) {
+                    timerCount++;
+                    document.getElementById("timer").innerText = timerCount;
+                } else {
+                    clearInterval(timerInterval); // Stop the timer
+                    markIncorrect(); // Mark the question incorrect if time runs out
+                }
+            }, 1000);
+        }
+
+        // Check the user's answer
+        function checkAnswer() {
+            clearInterval(timerInterval); // Stop the timer
+            const userAnswer = parseInt(document.getElementById("answerInput").value);
+            const correctAnswer = num1 * num2;
+
+            if (userAnswer === correctAnswer) {
+                correctCount++;
+                document.getElementById("feedbackMessage").innerText = "Correct!";
+                addToHistory(num1, num2, userAnswer, "Correct");
+            } else {
+                incorrectCount++;
+                document.getElementById("feedbackMessage").innerText = `Incorrect! The correct answer was ${correctAnswer}.`;
+                addToHistory(num1, num2, userAnswer, "Incorrect");
+            }
+
+            // Update the score
+            document.getElementById("correctCount").innerText = correctCount;
+            document.getElementById("incorrectCount").innerText = incorrectCount;
+
+            // Generate a new question
+            generateQuestion();
+        }
+
+        // Mark the answer incorrect if the timer runs out
+        function markIncorrect() {
+            incorrectCount++;
+            const correctAnswer = num1 * num2;
+            document.getElementById("feedbackMessage").innerText = `Time's up! The correct answer was ${correctAnswer}.`;
+            document.getElementById("incorrectCount").innerText = incorrectCount;
+            addToHistory(num1, num2, "No answer", "Incorrect");
+
+            generateQuestion(); // Generate a new question
+        }
+
+        // Add question result to history with date and time
+        function addToHistory(num1, num2, answer, result) {
+            const historyList = document.getElementById("historyList");
+            const entry = document.createElement("p");
+            const currentDateTime = new Date().toLocaleString(); // Get the current date and time
+            entry.innerText = `[${currentDateTime}] ${num1} x ${num2} = ${answer} (${result})`;
+            historyList.appendChild(entry);
+        }
+
+        // Initialize the first question on page load
+        window.onload = generateQuestion;
+    </script>
+</body>
+</html>
