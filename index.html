@@ -984,6 +984,7 @@
     let timerInterval;
     let isPaused = false;
     let gameActive = false;
+    let answering = false;   // hard lock — prevents any re-entry during answer processing
 
     /* ── Level selector ── */
     function selectLevel(level, btn) {
@@ -1100,6 +1101,7 @@
     function generateQuestion() {
         if (questionCount >= MAX_QUESTIONS) { endQuiz(); return; }
 
+        answering = false;   // reset lock for the new question
         num1 = Math.floor(Math.random() * (NUM_MAX - NUM_MIN + 1)) + NUM_MIN;
         num2 = Math.floor(Math.random() * (NUM_MAX - NUM_MIN + 1)) + NUM_MIN;
         correctAnswer = num1 * num2;
@@ -1115,7 +1117,6 @@
             btn.textContent = choices[i];
             btn.disabled = false;
             btn.classList.remove('correct-flash', 'wrong-flash', 'pressing');
-            // Explicitly reset any lingering inline transform/shadow from prior press
             btn.style.transform = '';
             btn.style.boxShadow = '';
         });
@@ -1136,7 +1137,8 @@
     }
 
     function selectAnswer(index) {
-        if (!gameActive || isPaused) return;
+        if (!gameActive || isPaused || answering) return;
+        answering = true;
         gameActive = false;
         clearInterval(timerInterval);
 
@@ -1192,7 +1194,8 @@
     }
 
     function timeUp() {
-        if (!gameActive) return;
+        if (!gameActive || answering) return;
+        answering = true;
         gameActive = false;
         incorrectCount++;
         streak = 0;
@@ -1267,19 +1270,26 @@
 
     function restartQuiz() {
         stopBgMusic();
+        clearInterval(timerInterval);
         correctCount = 0; incorrectCount = 0; streak = 0; score = 0;
-        questionCount = 0; isPaused = false; gameActive = false;
+        questionCount = 0; isPaused = false; gameActive = false; answering = false;
         document.getElementById('progressBar').innerHTML = '';
         document.getElementById('quiz-complete').style.display = 'none';
         document.getElementById('question').style.display = 'block';
         document.getElementById('answers').style.visibility = 'visible';
         document.getElementById('pause-btn').style.display = 'block';
+        // Re-enable answer buttons in case they were left disabled
+        document.querySelectorAll('.answer-btn').forEach(b => {
+            b.disabled = false;
+            b.classList.remove('correct-flash', 'wrong-flash', 'pressing');
+            b.style.transform = '';
+            b.style.boxShadow = '';
+        });
         updateHUD();
         // Reset level to easy
         currentLevel = 'easy';
         document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
         document.querySelector('.level-btn.easy').classList.add('selected');
-        document.getElementById('pill-t').textContent = '⏰ 10 sec each';
         // Show start screen again
         document.getElementById('start-screen').style.display = 'flex';
     }
