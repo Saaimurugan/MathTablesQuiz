@@ -322,9 +322,9 @@
         /* ── Name prompt modal ── */
         #name-modal {
             display: none;
-            position: absolute;
+            position: fixed;
             inset: 0;
-            z-index: 60;
+            z-index: 9999;
             background: rgba(0,0,30,.82);
             backdrop-filter: blur(6px);
             flex-direction: column;
@@ -753,20 +753,20 @@
         <button onclick="resumeGame()">▶ Resume</button>
     </div>
 </div>
-    <!-- Name prompt modal -->
-    <div id="name-modal">
-        <h3>📸 Share Your Score</h3>
-        <p>Enter your name to appear on the score card</p>
-        <input id="player-name-input" type="text" maxlength="24"
-               placeholder="Your name…" autocomplete="off"
-               onkeydown="if(event.key==='Enter') confirmName()" />
-        <div class="name-modal-btns">
-            <button id="name-confirm-btn" onclick="confirmName()">✅ Continue</button>
-            <button id="name-cancel-btn"  onclick="cancelName()">Cancel</button>
-        </div>
-    </div>
-
 </div><!-- end rotate-wrap -->
+
+<!-- Name prompt modal (outside rotate-wrap so it sits in the natural viewport) -->
+<div id="name-modal">
+    <h3>📸 Share Your Score</h3>
+    <p>Enter your name to appear on the score card</p>
+    <input id="player-name-input" type="text" maxlength="24"
+           placeholder="Your name…" autocomplete="off"
+           onkeydown="if(event.key==='Enter') confirmName()" />
+    <div class="name-modal-btns">
+        <button id="name-confirm-btn" onclick="confirmName()">✅ Continue</button>
+        <button id="name-cancel-btn"  onclick="cancelName()">Cancel</button>
+    </div>
+</div>
 
 <!-- Hidden history for print -->
 <div class="history" id="historySection">
@@ -1399,6 +1399,16 @@
         const modal = document.getElementById('name-modal');
         const input = document.getElementById('player-name-input');
         input.value = '';
+        // Unlock orientation and reset rotation so the keyboard is usable in portrait
+        if (window.screen.orientation && window.screen.orientation.unlock) {
+            window.screen.orientation.unlock();
+        }
+        const wrap = document.getElementById('rotate-wrap');
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+        wrap.style.width     = ww + 'px';
+        wrap.style.height    = wh + 'px';
+        wrap.style.transform = 'none';
         modal.style.display = 'flex';
         setTimeout(() => input.focus(), 80);
     }
@@ -1407,11 +1417,13 @@
         const input = document.getElementById('player-name-input');
         const name  = input.value.trim() || 'Anonymous';
         document.getElementById('name-modal').style.display = 'none';
+        fitScreen();   // restore landscape rotation
         captureAndShare(name);
     }
 
     function cancelName() {
         document.getElementById('name-modal').style.display = 'none';
+        fitScreen();   // restore landscape rotation
     }
 
     async function captureAndShare(playerName) {
