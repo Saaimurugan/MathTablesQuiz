@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="x5-orientation" content="landscape">
+    <meta name="full-screen" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6ND76ZDRC"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-G6ND76ZDRC');
+    </script>
+    <link rel="icon" type="image/x-icon" href="logo.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="logo.ico">
+    <link rel="apple-touch-icon" href="logo-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a2e">
+    <title>Tables Game</title>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a2e;
+        }
+
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ── Rotate wrapper: JS sets exact px size & transform ── */
+        #rotate-wrap {
+            position: fixed;
+            top: 0; left: 0;
+            transform-origin: top left;
+            /* default landscape — JS overrides for portrait */
+        }
+
+        /* ── Game Card ── */
+        .game-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            container-type: size;
+            container-name: game;
+        }
+
+        /* ── Sky Background ── */
+        .sky {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, #1a3a8a 0%, #0d1f5c 40%, #070d2e 100%);
+            z-index: 0;
+        }
+
+        /* Stars */
+        .stars {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            background: #fff;
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle {
+            from { opacity: .3; transform: scale(1); }
+            to   { opacity: 1;  transform: scale(1.4); }
+        }
+
+        /* Gold sparkle dots */
+        .sparkle {
+            position: absolute;
+            width: 6px; height: 6px;
+            background: #fbbf24;
+            clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+            opacity: .7;
+            animation: twinkle 3s infinite alternate;
+        }
+
+        /* Clouds */
+        .clouds {
+            position: absolute;
+            bottom: 22%;
+            width: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .cloud {
+            position: absolute;
+            background: #1a4a8a;
+            border-radius: 50px;
+            opacity: .55;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: inherit;
+            border-radius: 50%;
+        }
+
+        /* Green Hill */
+        .hill {
+            position: absolute;
+            bottom: 0;
+            width: 140%;
+            left: -20%;
+            height: 26%;
+            background: radial-gradient(ellipse at 50% 100%, #2d7a2d 0%, #1a5c1a 60%, #0f3d0f 100%);
+            border-radius: 60% 60% 0 0;
+            z-index: 3;
+        }
+        /* Lighter strip on hill top */
+        .hill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; width: 80%; height: 40%;
+            background: radial-gradient(ellipse, #3da83d 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        /* Bushes/trees */
+        .bushes {
+            position: absolute;
+            bottom: 20%;
+            width: 100%;
+            z-index: 4;
+            pointer-events: none;
+        }
+        .bush {
+            position: absolute;
+            background: #1a6020;
+            border-radius: 50% 50% 40% 40%;
+        }
+        .bush::before {
+            content: '';
+            position: absolute;
+            background: #22782a;
+            border-radius: 50%;
+        }
+
+        /* ── HUD Bar ── */
+        .hud {
+            position: relative;
+            z-index: 10;
+            width: 92%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2%;
+            gap: 8px;
+        }
+        .hud-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(10, 20, 60, 0.75);
+            border: 2px solid rgba(100, 140, 255, 0.4);
+            border-radius: 14px;
+            padding: clamp(4px, 1.2cqh, 8px) clamp(8px, 2cqw, 16px);
+            backdrop-filter: blur(6px);
+            min-width: 0;
+            flex: 1;
+            justify-content: center;
+        }
+        .hud-icon { font-size: clamp(.9em, 3cqw, 1.5em); line-height: 1; }
+        .hud-label {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .hud-title {
+            font-size: clamp(.5em, 1.4cqw, .7em);
+            color: #a0b4e8;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-weight: 600;
+        }
+        .hud-value {
+            font-size: clamp(.85em, 2.8cqw, 1.2em);
+            font-weight: 900;
+            color: #fbbf24;
+            line-height: 1.1;
+        }
+        /* Timer value in white */
+        #timerValue { color: #ffffff; }
+
+        /* ── Question Area ── */
+        .question-area {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        #countdown-overlay {
+            font-size: clamp(2em, 10cqh, 5em);
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 4px 20px rgba(251,191,36,.6);
+            display: none;
+        }
+
+        #question {
+            font-size: clamp(1.6em, 7cqw, 4em);
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 4px 24px rgba(0,0,0,.5);
+            letter-spacing: .05em;
+        }
+        #question .question-mark {
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251,191,36,.8);
+        }
+
+        /* Quiz Complete message */
+        #quiz-complete {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+        #quiz-complete h2 {
+            font-size: 2em;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251,191,36,.7);
+        }
+        #quiz-complete p { color: #e0e8ff; font-size: 1.1em; }
+        #restart-btn {
+            margin-top: 10px;
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1em;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #1e3a8a, 0 8px 20px rgba(0,0,0,.4);
+            transition: transform .1s, box-shadow .1s;
+        }
+        #restart-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #1e3a8a; }
+
+        #share-btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1em;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #065f46, 0 8px 20px rgba(0,0,0,.4);
+            transition: transform .1s, box-shadow .1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #share-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #065f46; }
+        #share-btn:disabled { opacity: .6; cursor: default; }
+
+        /* Score card rendered off-screen for screenshot */
+        #score-card {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            width: 480px;
+            padding: 36px 40px;
+            background: linear-gradient(135deg, #0d1f5c 0%, #070d2e 100%);
+            border: 3px solid rgba(100,140,255,.4);
+            border-radius: 24px;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            color: #fff;
+            text-align: center;
+        }
+        #score-card .sc-title  { font-size: 1.8em; font-weight: 900; color: #fbbf24; margin-bottom: 6px; }
+        #score-card .sc-sub    { font-size: .85em; color: #a0b4e8; margin-bottom: 14px; letter-spacing: .08em; text-transform: uppercase; }
+        #score-card .sc-name   { font-size: 1.15em; font-weight: 900; color: #fff; margin-bottom: 10px; letter-spacing: .04em; }
+        #score-card .sc-meta   { display: flex; justify-content: center; gap: 18px; margin-bottom: 18px; }
+        #score-card .sc-badge  {
+            background: rgba(255,255,255,.08);
+            border: 1.5px solid rgba(100,140,255,.3);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: .78em;
+            font-weight: 700;
+            color: #c7d9ff;
+            letter-spacing: .05em;
+        }
+        #score-card .sc-score  { font-size: 3.2em; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 4px; }
+        #score-card .sc-label  { font-size: .8em; color: #a0b4e8; margin-bottom: 22px; text-transform: uppercase; letter-spacing: .1em; }
+        #score-card .sc-stats  { display: flex; justify-content: center; gap: 32px; margin-bottom: 22px; }
+        #score-card .sc-stat   { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        #score-card .sc-stat-v { font-size: 1.6em; font-weight: 900; }
+        #score-card .sc-stat-l { font-size: .72em; color: #a0b4e8; text-transform: uppercase; letter-spacing: .08em; }
+        #score-card .sc-footer { font-size: .75em; color: rgba(160,180,232,.5); margin-top: 8px; }
+        #score-card .sc-qr     { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 16px; }
+        #score-card .sc-qr-label { font-size: .68em; color: #a0b4e8; text-transform: uppercase; letter-spacing: .08em; }
+        #score-card .sc-qr img  { border-radius: 8px; background: #fff; padding: 6px; display: block; }
+
+        /* ── Name prompt modal ── */
+        #name-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,30,.82);
+            backdrop-filter: blur(6px);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        #name-modal h3 {
+            font-size: 1.4em;
+            font-weight: 900;
+            color: #fbbf24;
+            text-align: center;
+        }
+        #name-modal p {
+            font-size: .9em;
+            color: #a0b4e8;
+            text-align: center;
+        }
+        #player-name-input {
+            padding: 12px 20px;
+            font-size: 1.1em;
+            font-weight: 700;
+            font-family: inherit;
+            border: 2px solid rgba(100,140,255,.5);
+            border-radius: 14px;
+            background: rgba(10,20,60,.9);
+            color: #fff;
+            outline: none;
+            text-align: center;
+            width: 260px;
+            letter-spacing: .04em;
+        }
+        #player-name-input:focus { border-color: #fbbf24; }
+        #player-name-input::placeholder { color: rgba(160,180,232,.4); }
+        .name-modal-btns { display: flex; gap: 12px; }
+        #name-confirm-btn {
+            padding: 11px 28px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1em;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #065f46;
+            font-family: inherit;
+            transition: transform .1s;
+        }
+        #name-confirm-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #065f46; }
+        #name-cancel-btn {
+            padding: 11px 20px;
+            background: rgba(255,255,255,.08);
+            color: #a0b4e8;
+            border: 2px solid rgba(100,140,255,.3);
+            border-radius: 14px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background .15s;
+        }
+        #name-cancel-btn:hover { background: rgba(255,255,255,.14); }
+
+        /* ── Answer Buttons ── */
+        .answers {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: clamp(5px, 1.5cqw, 14px);
+            width: 90%;
+            margin-bottom: 3%;
+        }
+        .answer-btn {
+            padding: clamp(8px, 2.5cqh, 18px) 0;
+            font-size: clamp(.85em, 2.5cqw, 1.5em);
+            font-weight: 900;
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            text-shadow: 0 2px 4px rgba(0,0,0,.3);
+            transition: transform .12s, box-shadow .12s, filter .15s;
+            letter-spacing: .03em;
+            touch-action: manipulation;
+        }
+        .answer-btn:hover  { filter: brightness(1.12); }
+        .answer-btn.pressing { transform: translateY(3px) !important; }
+        .answer-btn.pressing:nth-child(1) { box-shadow: 0 3px 0 #1450a0 !important; }
+        .answer-btn.pressing:nth-child(2) { box-shadow: 0 3px 0 #186028 !important; }
+        .answer-btn.pressing:nth-child(3) { box-shadow: 0 3px 0 #a04d00 !important; }
+        .answer-btn.pressing:nth-child(4) { box-shadow: 0 3px 0 #4e1e90 !important; }
+
+        /* Individual button colours */
+        .answer-btn:nth-child(1) {
+            background: linear-gradient(160deg, #4a9fe8 0%, #1e6fc4 100%);
+            box-shadow: 0 6px 0 #1450a0, 0 8px 20px rgba(0,0,0,.35);
+        }
+
+        .answer-btn:nth-child(2) {
+            background: linear-gradient(160deg, #4ec85a 0%, #27933a 100%);
+            box-shadow: 0 6px 0 #186028, 0 8px 20px rgba(0,0,0,.35);
+        }
+
+        .answer-btn:nth-child(3) {
+            background: linear-gradient(160deg, #f9a828 0%, #e07000 100%);
+            box-shadow: 0 6px 0 #a04d00, 0 8px 20px rgba(0,0,0,.35);
+        }
+
+        .answer-btn:nth-child(4) {
+            background: linear-gradient(160deg, #a86ee8 0%, #7030c0 100%);
+            box-shadow: 0 6px 0 #4e1e90, 0 8px 20px rgba(0,0,0,.35);
+        }
+
+        /* Correct / Incorrect flash */
+        .answer-btn.correct-flash {
+            background: linear-gradient(160deg, #86efac, #22c55e) !important;
+            box-shadow: 0 0 24px #22c55e !important;
+        }
+        .answer-btn.wrong-flash {
+            background: linear-gradient(160deg, #fca5a5, #ef4444) !important;
+            box-shadow: 0 0 24px #ef4444 !important;
+        }
+        .answer-btn:disabled { cursor: default; filter: none; transform: translateY(0) !important; }
+
+        /* Non-selected buttons go grey after an answer */
+        .answer-btn.dimmed {
+            background: linear-gradient(160deg, #4a4a6a 0%, #2e2e4a 100%) !important;
+            box-shadow: 0 3px 0 #1a1a30, 0 4px 10px rgba(0,0,0,.3) !important;
+            color: rgba(255,255,255,.35) !important;
+            text-shadow: none !important;
+        }
+
+        /* Progress bar at very bottom */
+        .progress-bar-container {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 6px;
+            background: rgba(255,255,255,.1);
+            z-index: 10;
+        }
+        .progress-bar {
+            height: 100%;
+            display: flex;
+        }
+        .progress-segment { height: 100%; }
+        .progress-segment.correct   { background: #4ade80; }
+        .progress-segment.incorrect { background: #f87171; }
+
+        /* ── Feedback toast ── */
+        #feedback-toast {
+            position: absolute;
+            top: 18%;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: rgba(0,0,0,.7);
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: 800;
+            z-index: 20;
+            transition: transform .2s, opacity .2s;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        #feedback-toast.show { transform: translateX(-50%) scale(1); }
+
+        /* ── Pause overlay ── */
+        #pause-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,40,.85);
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        #pause-overlay h2 { color: #fbbf24; font-size: 2em; }
+        #pause-overlay button {
+            padding: 12px 36px;
+            font-size: 1.1em;
+            font-weight: 800;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #4ade80, #16a34a);
+            color: #fff;
+            box-shadow: 0 5px 0 #14532d;
+            transition: transform .1s;
+        }
+        #pause-overlay button:active { transform: translateY(3px); box-shadow: 0 2px 0 #14532d; }
+
+        /* Pause & Mute buttons in HUD */
+        #pause-btn, #mute-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 20, 60, 0.75);
+            border: 2px solid rgba(100, 140, 255, 0.4);
+            border-radius: 14px;
+            padding: clamp(4px, 1.2cqh, 8px) clamp(8px, 2cqw, 16px);
+            backdrop-filter: blur(6px);
+            color: #a0b4e8;
+            font-size: clamp(.85em, 2.5cqw, 1.4em);
+            cursor: pointer;
+            font-weight: 700;
+            letter-spacing: .05em;
+            user-select: none;
+            flex: 0 0 auto;
+            z-index: 10;
+        }
+        #pause-btn:hover, #mute-btn:hover { background: rgba(30,58,138,.8); color: #fff; }
+
+        /* ── Start Screen overlay ── */
+        #start-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(10px, 2.5vh, 22px);
+            background: rgba(4, 10, 40, 0.78);
+            backdrop-filter: blur(4px);
+        }
+        #start-screen .game-title {
+            font-size: clamp(1.6em, 6vw, 3.2em);
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 4px 24px rgba(0,0,0,.6);
+            letter-spacing: .04em;
+            text-align: center;
+        }
+        #start-screen .game-title span {
+            color: #fbbf24;
+            text-shadow: 0 0 24px rgba(251,191,36,.8);
+        }
+        #start-screen .subtitle {
+            font-size: clamp(.75em, 2vw, 1.1em);
+            color: #a0b4e8;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+        #start-screen .info-pills {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #start-screen .pill {
+            background: rgba(30, 58, 138, 0.7);
+            border: 1.5px solid rgba(100,140,255,.35);
+            border-radius: 30px;
+            padding: 5px 16px;
+            font-size: clamp(.7em, 1.8vw, .9em);
+            color: #c7d9ff;
+            font-weight: 700;
+        }
+        #start-btn {
+            margin-top: 4px;
+            padding: clamp(10px,2vh,16px) clamp(32px,8vw,64px);
+            font-size: clamp(1em, 3vw, 1.6em);
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #92400e, 0 12px 30px rgba(0,0,0,.45);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            transition: transform .12s, box-shadow .12s;
+            touch-action: manipulation;
+        }
+        #start-btn:hover  { transform: translateY(-3px); filter: brightness(1.1); }
+        #start-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #92400e; }
+
+        /* ── Level picker ── */
+        .level-picker {
+            display: flex;
+            gap: clamp(8px, 2vw, 18px);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .level-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: clamp(8px,1.8vh,14px) clamp(14px,3vw,28px);
+            border: 3px solid transparent;
+            border-radius: 18px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 800;
+            transition: transform .12s, border-color .15s, box-shadow .15s;
+            touch-action: manipulation;
+            min-width: clamp(80px, 15vw, 120px);
+        }
+        .level-btn .lv-icon  { font-size: clamp(1.2em, 3.5vw, 2em); }
+        .level-btn .lv-name  { font-size: clamp(.8em, 2.2vw, 1.1em); color: #fff; letter-spacing: .04em; }
+        .level-btn .lv-desc  { font-size: clamp(.55em, 1.4vw, .72em); color: rgba(255,255,255,.7); text-align: center; }
+
+        .level-btn.easy   { background: linear-gradient(145deg, #166534, #15803d); box-shadow: 0 6px 0 #14532d; }
+        .level-btn.medium { background: linear-gradient(145deg, #92400e, #b45309); box-shadow: 0 6px 0 #78350f; }
+        .level-btn.hard   { background: linear-gradient(145deg, #7f1d1d, #b91c1c); box-shadow: 0 6px 0 #6b1111; }
+
+        .level-btn.selected { border-color: #fbbf24; box-shadow: 0 0 0 3px #fbbf2466, 0 6px 0 currentColor; transform: translateY(-3px); }
+        .level-btn:active   { transform: translateY(3px) !important; }
+
+        /* ── Mute button — now in HUD, style handled above ── */
+
+        /* History (hidden, print only) */
+        .history { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            .history, .history * { visibility: visible; }
+            .history { position: absolute; top: 0; left: 0; width: 100%; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="rotate-wrap">
+<div class="game-card">
+    <!-- Sky layer -->
+    <div class="sky"></div>
+    <div class="stars" id="stars"></div>
+
+    <!-- Hill & bushes -->
+    <div class="hill"></div>
+    <div class="bushes" id="bushes"></div>
+    <div class="clouds" id="clouds"></div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <div class="game-title">⭐ Math <span>Tables</span> Quiz ⭐</div>
+        <div class="subtitle">Choose your level</div>
+        <div class="level-picker">
+            <button class="level-btn easy selected" onclick="selectLevel('easy', this)">
+                <span class="lv-icon">🌱</span>
+                <span class="lv-name">Easy</span>
+                <span class="lv-desc">2–10 · 10 sec</span>
+            </button>
+            <button class="level-btn medium" onclick="selectLevel('medium', this)">
+                <span class="lv-icon">🔥</span>
+                <span class="lv-name">Medium</span>
+                <span class="lv-desc">2–12 · 7 sec</span>
+            </button>
+            <button class="level-btn hard" onclick="selectLevel('hard', this)">
+                <span class="lv-icon">💀</span>
+                <span class="lv-name">Hard</span>
+                <span class="lv-desc">6–12 · 5 sec</span>
+            </button>
+        </div>
+        <div class="info-pills" id="level-pills">
+            <span class="pill" id="pill-q">30 Questions</span>
+            <span class="pill">🔥 Streak Bonus</span>
+        </div>
+        <button id="start-btn" onclick="startGame()">▶ Start</button>
+    </div>
+
+    <!-- HUD (Score · Time · Streak · Mute · Pause) -->
+    <div class="hud">
+        <div class="hud-badge">
+            <span class="hud-icon">⭐</span>
+            <div class="hud-label">
+                <span class="hud-title">Score</span>
+                <span class="hud-value" id="scoreValue">0</span>
+            </div>
+        </div>
+        <div class="hud-badge">
+            <span class="hud-icon">⏰</span>
+            <div class="hud-label">
+                <span class="hud-title">Time</span>
+                <span class="hud-value" id="timerValue">10</span>
+            </div>
+        </div>
+        <div class="hud-badge">
+            <span class="hud-icon">🏆</span>
+            <div class="hud-label">
+                <span class="hud-title">Streak</span>
+                <span class="hud-value" id="streakValue">0</span>
+            </div>
+        </div>
+        <button id="mute-btn" onclick="toggleMute()" title="Toggle sound">🔊</button>
+        <button id="pause-btn" onclick="pauseGame()">⏸</button>
+    </div>
+
+    <!-- Question -->
+    <div class="question-area">
+        <div id="countdown-overlay"></div>
+        <div id="question"></div>
+        <div id="quiz-complete">
+            <h2>🎉 Quiz Complete!</h2>
+            <p id="final-score-msg"></p>
+            <button id="restart-btn" onclick="restartQuiz()">🔄 Play Again</button>
+            <button id="share-btn" onclick="shareScore()">📸 Share Score</button>
+        </div>
+    </div>
+
+    <!-- Answer Buttons -->
+    <div class="answers" id="answers">
+        <button class="answer-btn" id="btn0" onclick="selectAnswer(0)"></button>
+        <button class="answer-btn" id="btn1" onclick="selectAnswer(1)"></button>
+        <button class="answer-btn" id="btn2" onclick="selectAnswer(2)"></button>
+        <button class="answer-btn" id="btn3" onclick="selectAnswer(3)"></button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Feedback toast -->
+    <div id="feedback-toast"></div>
+
+    <!-- Pause overlay -->
+    <div id="pause-overlay">
+        <h2>⏸ Paused</h2>
+        <button onclick="resumeGame()">▶ Resume</button>
+    </div>
+</div>
+</div><!-- end rotate-wrap -->
+
+<!-- Name prompt modal (outside rotate-wrap so it sits in the natural viewport) -->
+<div id="name-modal">
+    <h3>📸 Share Your Score</h3>
+    <p>Enter your name to appear on the score card</p>
+    <input id="player-name-input" type="text" maxlength="24"
+           placeholder="Your name…" autocomplete="off"
+           onkeydown="if(event.key==='Enter') confirmName()" />
+    <div class="name-modal-btns">
+        <button id="name-confirm-btn" onclick="confirmName()">✅ Continue</button>
+        <button id="name-cancel-btn"  onclick="cancelName()">Cancel</button>
+    </div>
+</div>
+
+<!-- Hidden history for print -->
+<div class="history" id="historySection">
+    <h3>Answer History</h3>
+    <div id="historyList"></div>
+</div>
+
+<script>
+    /* ══════════════════════════════════════════════
+       AUDIO ENGINE  (Web Audio API — no external files)
+       ══════════════════════════════════════════════ */
+    let audioCtx = null;
+    let isMuted = false;
+
+    /* Lazily create AudioContext on first user gesture */
+    function getAudioCtx() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+    }
+
+    /* ── Master gain (mute control) ── */
+    let masterGain = null;
+    function getMasterGain() {
+        const ctx = getAudioCtx();
+        if (!masterGain) {
+            masterGain = ctx.createGain();
+            masterGain.gain.value = isMuted ? 0 : 1;
+            masterGain.connect(ctx.destination);
+        }
+        return masterGain;
+    }
+
+    /* ── Toggle mute ── */
+    function toggleMute() {
+        isMuted = !isMuted;
+        document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+        if (masterGain) masterGain.gain.value = isMuted ? 0 : 1;
+        if (!isMuted && bgMusicNode === null) startBgMusic();
+    }
+
+    /* ─────────────────────────────────────────────
+       BACKGROUND MUSIC  — upbeat chiptune-style
+       4 layers:
+         1) Square-wave melody  (catchy 16-note phrase, 2 bars × 2)
+         2) Saw-wave bass line  (root notes, pumping 8th notes)
+         3) Triangle arpeggio   (chord tones, 16th-note bursts)
+         4) Rhythm noise hi-hat (16th-note tick)
+       All scheduled ahead via the AudioContext clock for
+       rock-solid timing. BPM = 148.
+    ───────────────────────────────────────────── */
+    let bgMusicNode    = null;
+    let bgGain         = null;
+    let bgScheduleTimer = null;
+    let bgNextBeat     = 0;
+    let bgBeatIdx      = 0;
+
+    const BPM       = 148;
+    const BEAT      = 60 / BPM;          // one quarter note  ≈ 0.405 s
+    const S16       = BEAT / 4;          // one sixteenth note ≈ 0.101 s
+
+    // ── Key: C major pentatonic (C D E G A) ──
+    // Note frequencies for two octaves
+    const N = {
+        C4:261.63, D4:293.66, E4:329.63, G4:392.00, A4:440.00,
+        C5:523.25, D5:587.33, E5:659.25, G5:783.99, A5:880.00,
+        C3:130.81, G3:196.00, A3:220.00, E3:164.81, D3:146.83,
+    };
+
+    // 32-step (2-bar) melody — indexes into MELODY_SEQ
+    // Each entry: [freq, durationIn16ths]  (total = 32 sixteenths)
+    const MELODY_SEQ = [
+        [N.E5,2],[N.G5,2],[N.A5,2],[N.G5,2],
+        [N.E5,2],[N.C5,2],[N.D5,2],[N.E5,2],
+        [N.G5,2],[N.E5,2],[N.D5,2],[N.C5,2],
+        [N.D5,4],[N.E5,2],[N.G5,2],
+        // bar 2
+        [N.A5,2],[N.G5,2],[N.E5,2],[N.D5,2],
+        [N.C5,2],[N.E5,2],[N.G5,2],[N.A5,2],
+        [N.G5,2],[N.E5,2],[N.C5,2],[N.D5,2],
+        [N.C5,4],[0,4],
+    ];
+
+    // Bass: 16-step (1 bar) root pattern, repeating
+    // 0 = rest
+    const BASS_SEQ = [
+        N.C3, 0,    N.C3, N.C3,
+        N.G3, 0,    N.G3, 0,
+        N.A3, 0,    N.A3, N.A3,
+        N.E3, 0,    N.G3, 0,
+    ];
+
+    // Arpeggio chord tones per 4-beat bar (cycles every 4 bars = BASS repeats × 2)
+    const ARP_BARS = [
+        [N.C4, N.E4, N.G4, N.C5],   // C major
+        [N.G3, N.D4, N.G4, N.A4],   // G add9
+        [N.A3, N.C4, N.E4, N.A4],   // A minor
+        [N.E3, N.G3, N.D4, N.E4],   // Em7
+    ];
+
+    // Hi-hat pattern: 1=tick, 0=rest (16 steps, accent every 4)
+    const HAT_SEQ = [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0];
+
+    // Scheduler state
+    let melodyStep = 0, melodyTick = 0;
+    let bassStep   = 0;
+    let arpBar     = 0, arpStep = 0;
+    let hatStep    = 0;
+
+    function startBgMusic() {
+        if (isMuted) return;
+        const ctx = getAudioCtx();
+
+        bgGain = ctx.createGain();
+        bgGain.gain.value = 0.0;
+        bgGain.connect(getMasterGain());
+
+        // Gentle fade-in so the music doesn't slam in
+        bgGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 1.2);
+
+        bgNextBeat  = ctx.currentTime + 0.05;
+        bgBeatIdx   = 0;
+        melodyStep  = 0; melodyTick = 0;
+        bassStep    = 0;
+        arpBar      = 0; arpStep = 0;
+        hatStep     = 0;
+
+        scheduleBgChunk();
+    }
+
+    function scheduleBgChunk() {
+        const ctx    = getAudioCtx();
+        const lookahead = 0.25;   // seconds to schedule ahead
+
+        while (bgNextBeat < ctx.currentTime + lookahead) {
+            const t = bgNextBeat;
+
+            // ── 1. Melody (square wave, one 16th note tick) ──
+            if (melodyTick === 0) {
+                const [freq, dur] = MELODY_SEQ[melodyStep % MELODY_SEQ.length];
+                if (freq > 0) bgPlayNote('square', freq, t, S16 * dur * 0.85, 0.18, bgGain);
+                melodyTick = dur;
+                melodyStep = (melodyStep + 1) % MELODY_SEQ.length;
+            }
+            melodyTick--;
+
+            // ── 2. Bass (sawtooth, one 16th note tick) ──
+            const bassFreq = BASS_SEQ[bassStep % BASS_SEQ.length];
+            if (bassFreq > 0) bgPlayNote('sawtooth', bassFreq, t, S16 * 0.7, 0.22, bgGain, true);
+            bassStep = (bassStep + 1) % BASS_SEQ.length;
+
+            // ── 3. Arpeggio (triangle, 16th notes) ──
+            const arpChord = ARP_BARS[arpBar % ARP_BARS.length];
+            const arpFreq  = arpChord[arpStep % arpChord.length];
+            bgPlayNote('triangle', arpFreq, t, S16 * 0.6, 0.10, bgGain);
+            arpStep++;
+            if (arpStep % 16 === 0) arpBar++;   // new bar every 16 ticks
+
+            // ── 4. Hi-hat (filtered noise) ──
+            if (HAT_SEQ[hatStep % HAT_SEQ.length]) {
+                const accent = (hatStep % 4 === 0) ? 0.14 : 0.07;
+                bgPlayHat(t, accent);
+            }
+            hatStep = (hatStep + 1) % HAT_SEQ.length;
+
+            bgNextBeat += S16;
+        }
+
+        bgScheduleTimer = setTimeout(scheduleBgChunk, 100);
+        bgMusicNode = bgScheduleTimer;
+    }
+
+    /* Generic pitched note helper */
+    function bgPlayNote(type, freq, when, dur, vol, outGain, lowpass = false) {
+        const ctx  = getAudioCtx();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, when);
+        gain.gain.linearRampToValueAtTime(vol, when + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.001, when + dur);
+        if (lowpass) {
+            const f = ctx.createBiquadFilter();
+            f.type = 'lowpass'; f.frequency.value = 400;
+            osc.connect(f); f.connect(gain);
+        } else {
+            osc.connect(gain);
+        }
+        gain.connect(outGain);
+        osc.start(when);
+        osc.stop(when + dur + 0.01);
+    }
+
+    /* Noise hi-hat */
+    function bgPlayHat(when, vol) {
+        const ctx     = getAudioCtx();
+        const bufSize = Math.ceil(ctx.sampleRate * 0.04);
+        const buf     = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data    = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const src    = ctx.createBufferSource();
+        src.buffer   = buf;
+        const filt   = ctx.createBiquadFilter();
+        filt.type    = 'highpass';
+        filt.frequency.value = 7000;
+        const gain   = ctx.createGain();
+        gain.gain.setValueAtTime(vol, when);
+        gain.gain.exponentialRampToValueAtTime(0.001, when + 0.035);
+        src.connect(filt); filt.connect(gain); gain.connect(bgGain);
+        src.start(when);
+        src.stop(when + 0.04);
+    }
+
+    function stopBgMusic() {
+        clearTimeout(bgScheduleTimer);
+        bgScheduleTimer = null;
+        bgMusicNode = null;
+        if (bgGain) {
+            try { bgGain.gain.linearRampToValueAtTime(0, getAudioCtx().currentTime + 0.2); } catch(e){}
+            bgGain = null;
+        }
+    }
+
+    /* ─────────────────────────────────────────────
+       CORRECT ANSWER — bright ascending fanfare
+    ───────────────────────────────────────────── */
+    function playCorrectSound() {
+        if (isMuted) return;
+        const ctx  = getAudioCtx();
+        const mg   = getMasterGain();
+        const notes = [523.25, 659.25, 783.99, 1046.50];   // C5 E5 G5 C6
+        const times = [0, 0.10, 0.20, 0.32];
+        notes.forEach((freq, i) => {
+            const osc   = ctx.createOscillator();
+            const gain  = ctx.createGain();
+            const when  = ctx.currentTime + times[i];
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, when);
+            gain.gain.linearRampToValueAtTime(0.45, when + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, when + 0.35);
+            osc.connect(gain);
+            gain.connect(mg);
+            osc.start(when);
+            osc.stop(when + 0.4);
+        });
+        // Sparkle shimmer on top
+        const shimmer = ctx.createOscillator();
+        const sg = ctx.createGain();
+        shimmer.type = 'sine';
+        shimmer.frequency.setValueAtTime(2093, ctx.currentTime + 0.32);
+        sg.gain.setValueAtTime(0, ctx.currentTime + 0.32);
+        sg.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.35);
+        sg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.70);
+        shimmer.connect(sg); sg.connect(mg);
+        shimmer.start(ctx.currentTime + 0.32);
+        shimmer.stop(ctx.currentTime + 0.75);
+    }
+
+    /* ─────────────────────────────────────────────
+       WRONG ANSWER — descending dull thud
+    ───────────────────────────────────────────── */
+    function playWrongSound() {
+        if (isMuted) return;
+        const ctx = getAudioCtx();
+        const mg  = getMasterGain();
+
+        // Low descending tones
+        const notes = [220, 174.61, 146.83];   // A3 F3 D3
+        const times = [0, 0.15, 0.30];
+        notes.forEach((freq, i) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const when = ctx.currentTime + times[i];
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, when);
+            osc.frequency.linearRampToValueAtTime(freq * 0.85, when + 0.28);
+            gain.gain.setValueAtTime(0, when);
+            gain.gain.linearRampToValueAtTime(0.30, when + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, when + 0.35);
+            osc.connect(gain); gain.connect(mg);
+            osc.start(when); osc.stop(when + 0.4);
+        });
+
+        // Low rumble noise via filtered white noise
+        const bufSize = ctx.sampleRate * 0.4;
+        const buffer  = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data    = buffer.getChannelData(0);
+        for (let k = 0; k < bufSize; k++) data[k] = Math.random() * 2 - 1;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 180;
+        const ng = ctx.createGain();
+        ng.gain.setValueAtTime(0.18, ctx.currentTime);
+        ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        source.connect(filter); filter.connect(ng); ng.connect(mg);
+        source.start(ctx.currentTime);
+        source.stop(ctx.currentTime + 0.4);
+    }
+
+    /* ─────────────────────────────────────────────
+       TIME-UP buzzer (same as wrong but sharper)
+    ───────────────────────────────────────────── */
+    function playTimeUpSound() {
+        if (isMuted) return;
+        const ctx = getAudioCtx();
+        const mg  = getMasterGain();
+        [0, 0.18].forEach(delay => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const when = ctx.currentTime + delay;
+            osc.type = 'square';
+            osc.frequency.value = 180;
+            gain.gain.setValueAtTime(0, when);
+            gain.gain.linearRampToValueAtTime(0.25, when + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, when + 0.16);
+            osc.connect(gain); gain.connect(mg);
+            osc.start(when); osc.stop(when + 0.18);
+        });
+    }
+
+    /* ── Level definitions ── */
+    const LEVELS = {
+        easy:   { time: 10, min: 2, max: 10 },
+        medium: { time: 7,  min: 2, max: 12 },
+        hard:   { time: 5,  min: 6, max: 12 }
+    };
+    let currentLevel = 'easy';
+
+    /* ── Config ── */
+    const MAX_QUESTIONS = 30;
+    let QUESTION_TIME = 10;   // updated when level chosen
+    let NUM_MIN = 2, NUM_MAX = 10;
+
+    /* ── State ── */
+    let correctCount = 0, incorrectCount = 0, streak = 0, score = 0;
+    let num1, num2, correctAnswer, choices;
+    let questionCount = 0;
+    let timeLeft = QUESTION_TIME;
+    let timerInterval;
+    let isPaused = false;
+    let gameActive = false;
+    let answering = false;   // hard lock — prevents any re-entry during answer processing
+    let gameStartTime = null, gameEndTime = null;
+
+    /* ── Level selector ── */
+    function selectLevel(level, btn) {
+        currentLevel = level;
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    }
+
+    /* ── Background generation ── */
+    function buildBackground() {
+        // Stars
+        const starsEl = document.getElementById('stars');
+        starsEl.innerHTML = '';
+        const starCount = 60;
+        for (let i = 0; i < starCount; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            const size = Math.random() * 3 + 1;
+            s.style.cssText = `
+                width:${size}px; height:${size}px;
+                top:${Math.random() * 65}%;
+                left:${Math.random() * 100}%;
+                animation-delay:${Math.random() * 3}s;
+                animation-duration:${1.5 + Math.random() * 2}s;
+            `;
+            starsEl.appendChild(s);
+        }
+        // Gold sparkles
+        const sparklePositions = [
+            [15,30],[82,12],[45,55],[68,28],[30,18],[90,42],[10,60]
+        ];
+        sparklePositions.forEach(([x,y]) => {
+            const sp = document.createElement('div');
+            sp.className = 'sparkle';
+            sp.style.cssText = `left:${x}%;top:${y}%;animation-delay:${Math.random()*2}s;`;
+            starsEl.appendChild(sp);
+        });
+
+        // Clouds
+        const cloudsEl = document.getElementById('clouds');
+        cloudsEl.innerHTML = '';
+        const cloudData = [
+            { left: 2,  w: 80,  h: 22 },
+            { left: 15, w: 120, h: 30 },
+            { left: 70, w: 90,  h: 24 },
+            { left: 82, w: 60,  h: 18 },
+        ];
+        cloudData.forEach(c => {
+            const cl = document.createElement('div');
+            cl.className = 'cloud';
+            cl.style.cssText = `left:${c.left}%;width:${c.w}px;height:${c.h}px;`;
+            cl.style.setProperty('--bw', c.w * .6 + 'px');
+            cl.style.setProperty('--bh', c.h * .8 + 'px');
+            cloudsEl.appendChild(cl);
+        });
+
+        // Bushes
+        const bushesEl = document.getElementById('bushes');
+        bushesEl.innerHTML = '';
+        const bushData = [
+            { left: 2,  w: 40, h: 30 },
+            { left: 6,  w: 55, h: 38 },
+            { left: 14, w: 35, h: 26 },
+            { left: 80, w: 45, h: 32 },
+            { left: 87, w: 60, h: 40 },
+            { left: 93, w: 38, h: 28 },
+        ];
+        bushData.forEach(b => {
+            const bu = document.createElement('div');
+            bu.className = 'bush';
+            bu.style.cssText = `left:${b.left}%;width:${b.w}px;height:${b.h}px;`;
+            bushesEl.appendChild(bu);
+        });
+    }
+
+    /* ── Start game (called by Start button) ── */
+    function startGame() {
+        const cfg = LEVELS[currentLevel];
+        QUESTION_TIME = cfg.time;
+        NUM_MIN = cfg.min;
+        NUM_MAX = cfg.max;
+        document.getElementById('timerValue').innerText = QUESTION_TIME;
+        document.getElementById('start-screen').style.display = 'none';
+        startBgMusic();
+        startCountdown();
+    }
+
+    /* ── Quiz logic ── */
+    function startCountdown() {
+        gameActive = false;
+        let c = 3;
+        const overlay = document.getElementById('countdown-overlay');
+        const questionEl = document.getElementById('question');
+        const answersEl = document.getElementById('answers');
+        overlay.style.display = 'block';
+        questionEl.style.display = 'none';
+        answersEl.style.visibility = 'hidden';
+        overlay.innerText = c;
+
+        const iv = setInterval(() => {
+            c--;
+            if (c > 0) {
+                overlay.innerText = c;
+            } else {
+                clearInterval(iv);
+                overlay.style.display = 'none';
+                questionEl.style.display = 'block';
+                answersEl.style.visibility = 'visible';
+                gameStartTime = Date.now();
+                generateQuestion();
+            }
+        }, 1000);
+    }
+
+    function generateQuestion() {
+        if (questionCount >= MAX_QUESTIONS) { endQuiz(); return; }
+
+        answering = false;   // reset lock for the new question
+        num1 = Math.floor(Math.random() * (NUM_MAX - NUM_MIN + 1)) + NUM_MIN;
+        num2 = Math.floor(Math.random() * (NUM_MAX - NUM_MIN + 1)) + NUM_MIN;
+        correctAnswer = num1 * num2;
+
+        // Build 4 unique choices including the correct one
+        choices = generateChoices(correctAnswer);
+
+        document.getElementById('question').innerHTML =
+            `${num1} &times; ${num2} = <span class="question-mark">?</span>`;
+
+        const btns = document.querySelectorAll('.answer-btn');
+        btns.forEach((btn, i) => {
+            btn.textContent = choices[i];
+            btn.disabled = false;
+            btn.classList.remove('correct-flash', 'wrong-flash', 'pressing', 'dimmed');
+            btn.style.transform = '';
+            btn.style.boxShadow = '';
+        });
+
+        resetTimer();
+        gameActive = true;
+    }
+
+    function generateChoices(correct) {
+        const set = new Set([correct]);
+        while (set.size < 4) {
+            const delta = (Math.floor(Math.random() * 5) + 1) * (Math.random() < .5 ? 1 : -1);
+            const candidate = correct + delta;
+            if (candidate > 0) set.add(candidate);
+        }
+        // Shuffle
+        return [...set].sort(() => Math.random() - .5);
+    }
+
+    function selectAnswer(index) {
+        if (!gameActive || isPaused || answering) return;
+        answering = true;
+        gameActive = false;
+        clearInterval(timerInterval);
+
+        const chosen = choices[index];
+        const btns = document.querySelectorAll('.answer-btn');
+
+        // Disable immediately so no second tap can land
+        btns.forEach((b, i) => {
+            b.disabled = true;
+            b.classList.remove('pressing');
+            if (i !== index) b.classList.add('dimmed');
+        });
+
+        if (chosen === correctAnswer) {
+            btns[index].classList.add('correct-flash');
+            correctCount++;
+            streak++;
+            const points = 10 + (streak > 1 ? (streak - 1) * 5 : 0);
+            score += points;
+            showToast(`✅ Correct! +${points}`, '#22c55e');
+            addToHistory('Correct', `${num1} × ${num2} = ${chosen}`);
+            playCorrectSound();
+        } else {
+            btns[index].classList.add('wrong-flash');
+            // Highlight correct answer
+            const correctIdx = choices.indexOf(correctAnswer);
+            btns[correctIdx].classList.add('correct-flash');
+            incorrectCount++;
+            streak = 0;
+            showToast(`❌ It was ${correctAnswer}`, '#ef4444');
+            addToHistory('Incorrect', `${num1} × ${num2} = ${chosen} (Correct: ${correctAnswer})`);
+            playWrongSound();
+        }
+
+        updateHUD();
+        updateProgressBar(chosen === correctAnswer ? 'correct' : 'incorrect');
+        questionCount++;
+
+        setTimeout(() => generateQuestion(), 900);
+    }
+
+    /* ── Timer ── */
+    function resetTimer() {
+        clearInterval(timerInterval);
+        timeLeft = QUESTION_TIME;
+        document.getElementById('timerValue').innerText = timeLeft;
+
+        timerInterval = setInterval(() => {
+            if (isPaused) return;
+            timeLeft--;
+            document.getElementById('timerValue').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timeUp();
+            }
+        }, 1000);
+    }
+
+    function timeUp() {
+        if (!gameActive || answering) return;
+        answering = true;
+        gameActive = false;
+        incorrectCount++;
+        streak = 0;
+        const btns = document.querySelectorAll('.answer-btn');
+        const correctIdx = choices.indexOf(correctAnswer);
+        btns[correctIdx].classList.add('correct-flash');
+        btns.forEach(b => { b.disabled = true; b.classList.remove('pressing'); b.classList.add('dimmed'); });
+        showToast(`⏰ Time's up! Answer: ${correctAnswer}`, '#f97316');
+        addToHistory("Time's up", `${num1} × ${num2} = — (Correct: ${correctAnswer})`);
+        playTimeUpSound();
+        updateHUD();
+        updateProgressBar('incorrect');
+        questionCount++;
+        setTimeout(() => generateQuestion(), 900);
+    }
+
+    /* ── HUD ── */
+    function updateHUD() {
+        document.getElementById('scoreValue').innerText = score;
+        document.getElementById('streakValue').innerText = streak;
+    }
+
+    /* ── Progress bar ── */
+    function updateProgressBar(result) {
+        const bar = document.getElementById('progressBar');
+        const seg = document.createElement('div');
+        seg.className = `progress-segment ${result}`;
+        seg.style.width = `${100 / MAX_QUESTIONS}%`;
+        bar.appendChild(seg);
+    }
+
+    /* ── Toast ── */
+    let toastTimeout;
+    function showToast(msg, color) {
+        const t = document.getElementById('feedback-toast');
+        t.style.background = color + 'cc';
+        t.innerText = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => t.classList.remove('show'), 800);
+    }
+
+    /* ── Pause / Resume ── */
+    function pauseGame() {
+        if (!gameActive && timeLeft === QUESTION_TIME) return;
+        isPaused = true;
+        document.getElementById('pause-overlay').style.display = 'flex';
+        addToHistory('Pause', `Paused at question ${questionCount + 1}: ${num1} × ${num2}`);
+        // Fade background music down while paused
+        if (bgGain) bgGain.gain.linearRampToValueAtTime(0, getAudioCtx().currentTime + 0.3);
+    }
+    function resumeGame() {
+        isPaused = false;
+        document.getElementById('pause-overlay').style.display = 'none';
+        addToHistory('Resume', `Resumed at question ${questionCount + 1}: ${num1} × ${num2}`);
+        // Fade background music back in
+        if (bgGain) bgGain.gain.linearRampToValueAtTime(1.0, getAudioCtx().currentTime + 0.3);
+    }
+
+    /* ── Share Score ── */
+    let _shareResolve = null;
+
+    function shareScore() {
+        // Show name modal; actual capture happens after name is confirmed
+        const modal = document.getElementById('name-modal');
+        const input = document.getElementById('player-name-input');
+        input.value = '';
+        // Unlock orientation and reset rotation so the keyboard is usable in portrait
+        if (window.screen.orientation && window.screen.orientation.unlock) {
+            window.screen.orientation.unlock();
+        }
+        const wrap = document.getElementById('rotate-wrap');
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+        wrap.style.width     = ww + 'px';
+        wrap.style.height    = wh + 'px';
+        wrap.style.transform = 'none';
+        modal.style.display = 'flex';
+        setTimeout(() => input.focus(), 80);
+    }
+
+    function confirmName() {
+        const input = document.getElementById('player-name-input');
+        const name  = input.value.trim() || 'Anonymous';
+        document.getElementById('name-modal').style.display = 'none';
+        fitScreen();   // restore landscape rotation
+        captureAndShare(name);
+    }
+
+    function cancelName() {
+        document.getElementById('name-modal').style.display = 'none';
+        fitScreen();   // restore landscape rotation
+    }
+
+    async function captureAndShare(playerName) {
+        const btn = document.getElementById('share-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Capturing…';
+
+        // Populate score card
+        const pct      = Math.round((correctCount / MAX_QUESTIONS) * 100);
+        const elapsed  = gameStartTime && gameEndTime ? gameEndTime - gameStartTime : 0;
+        const mins     = Math.floor(elapsed / 60000);
+        const secs     = Math.floor((elapsed % 60000) / 1000);
+        const timeStr  = `${mins}:${String(secs).padStart(2, '0')}`;
+        const levelMap = { easy: '🌱 Easy', medium: '🔥 Medium', hard: '💀 Hard' };
+
+        document.getElementById('sc-name-val').textContent    = '👤 ' + playerName;
+        document.getElementById('sc-level-val').textContent   = levelMap[currentLevel] || currentLevel;
+        document.getElementById('sc-time-val').textContent    = '⏱ ' + timeStr;
+        document.getElementById('sc-score-val').textContent   = score;
+        document.getElementById('sc-correct-val').textContent = correctCount;
+        document.getElementById('sc-wrong-val').textContent   = incorrectCount;
+        document.getElementById('sc-pct-val').textContent     = pct + '%';
+
+        try {
+            const card   = document.getElementById('score-card');
+            const canvas = await html2canvas(card, { backgroundColor: null, scale: 2, useCORS: true });
+            const blob   = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            const file   = new File([blob], 'math-tables-score.png', { type: 'image/png' });
+            const text   = `🎉 ${playerName} scored ${score} on Math Tables Quiz!\n✅ ${correctCount} correct | 🎯 ${pct}% accuracy | https://shrevatsa-saaimurugan.github.io/tables/`;
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ title: 'Math Tables Quiz Score', text, files: [file] });
+            } else if (navigator.share) {
+                await navigator.share({ title: 'Math Tables Quiz Score', text });
+            } else {
+                const url = URL.createObjectURL(blob);
+                const a   = document.createElement('a');
+                a.href = url; a.download = 'math-tables-score.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') alert('Could not share. Try a screenshot instead!');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '📸 Share Score';
+    }
+
+    /* ── End Quiz ── */
+    function endQuiz() {
+        gameEndTime = Date.now();
+        clearInterval(timerInterval);
+        stopBgMusic();
+        document.getElementById('question').style.display = 'none';
+        document.getElementById('answers').style.visibility = 'hidden';
+        document.getElementById('pause-btn').style.display = 'none';
+        const qc = document.getElementById('quiz-complete');
+        qc.style.display = 'flex';
+        document.getElementById('final-score-msg').innerText =
+            `Score: ${score}  |  ✅ ${correctCount}  ❌ ${incorrectCount}`;
+    }
+
+    function restartQuiz() {
+        stopBgMusic();
+        clearInterval(timerInterval);
+        correctCount = 0; incorrectCount = 0; streak = 0; score = 0;
+        questionCount = 0; isPaused = false; gameActive = false; answering = false;
+        gameStartTime = null; gameEndTime = null;
+        document.getElementById('progressBar').innerHTML = '';
+        document.getElementById('quiz-complete').style.display = 'none';
+        document.getElementById('question').style.display = 'block';
+        document.getElementById('answers').style.visibility = 'visible';
+        document.getElementById('pause-btn').style.display = 'block';
+        // Re-enable answer buttons in case they were left disabled
+        document.querySelectorAll('.answer-btn').forEach(b => {
+            b.disabled = false;
+            b.classList.remove('correct-flash', 'wrong-flash', 'pressing', 'dimmed');
+            b.style.transform = '';
+            b.style.boxShadow = '';
+        });
+        updateHUD();
+        // Reset level to easy
+        currentLevel = 'easy';
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelector('.level-btn.easy').classList.add('selected');
+        // Show start screen again
+        document.getElementById('start-screen').style.display = 'flex';
+    }
+
+    /* ── History (for print) ── */
+    function addToHistory(result, details) {
+        const list = document.getElementById('historyList');
+        const p = document.createElement('p');
+        p.innerText = `[${new Date().toLocaleString()}] ${result}: ${details}`;
+        list.appendChild(p);
+    }
+
+    /* ── Fit screen: rotate + size the wrapper to always fill the display ── */
+    function fitScreen() {
+        const wrap = document.getElementById('rotate-wrap');
+        const sw = window.screen.width  || window.innerWidth;
+        const sh = window.screen.height || window.innerHeight;
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+
+        // Try JS orientation lock first (works on Android Chrome)
+        if (window.screen.orientation && window.screen.orientation.lock) {
+            window.screen.orientation.lock('landscape').catch(() => {});
+        }
+
+        if (ww < wh) {
+            // Portrait viewport → rotate 90° so landscape fills screen
+            // After rotation: visual width = wh, visual height = ww
+            wrap.style.width  = wh + 'px';
+            wrap.style.height = ww + 'px';
+            wrap.style.transform = `rotate(90deg) translateY(-${ww}px)`;
+        } else {
+            // Already landscape
+            wrap.style.width  = ww + 'px';
+            wrap.style.height = wh + 'px';
+            wrap.style.transform = 'none';
+        }
+    }
+
+    fitScreen();
+    window.addEventListener('resize', fitScreen);
+    window.addEventListener('orientationchange', () => setTimeout(fitScreen, 50));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) fitScreen(); });
+
+    /* ── Init ── */
+    buildBackground();
+
+    // Replace CSS :active with JS-driven .pressing to avoid stuck state on mobile
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+        const addPress   = () => { if (!btn.disabled) btn.classList.add('pressing'); };
+        const removePress = () => btn.classList.remove('pressing');
+        btn.addEventListener('pointerdown',   addPress);
+        btn.addEventListener('pointerup',     removePress);
+        btn.addEventListener('pointercancel', removePress);
+        btn.addEventListener('pointerleave',  removePress);
+    });
+
+    // Don't auto-start — wait for Start button
+</script>
+
+<!-- Score card (rendered off-screen for screenshot) -->
+<div id="score-card">
+    <div class="sc-title">⭐ Math Tables Quiz ⭐</div>
+    <div class="sc-sub">Game Complete</div>
+    <div class="sc-name" id="sc-name-val"></div>
+    <div class="sc-meta">
+        <span class="sc-badge" id="sc-level-val">🌱 Easy</span>
+        <span class="sc-badge" id="sc-time-val">⏱ 0:00</span>
+    </div>
+    <div class="sc-score" id="sc-score-val">0</div>
+    <div class="sc-label">Total Score</div>
+    <div class="sc-stats">
+        <div class="sc-stat">
+            <span class="sc-stat-v" style="color:#4ade80" id="sc-correct-val">0</span>
+            <span class="sc-stat-l">✅ Correct</span>
+        </div>
+        <div class="sc-stat">
+            <span class="sc-stat-v" style="color:#f87171" id="sc-wrong-val">0</span>
+            <span class="sc-stat-l">❌ Wrong</span>
+        </div>
+        <div class="sc-stat">
+            <span class="sc-stat-v" style="color:#fbbf24" id="sc-pct-val">0%</span>
+            <span class="sc-stat-l">🎯 Accuracy</span>
+        </div>
+    </div>
+    <div class="sc-qr">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALkAAAC5CAIAAAD7zwkLAAAERUlEQVR4nO3dwW3tNhAF0P+DrFVDGkt1aSw1qAFnrwVxCc5QVHDO1n6SbF9QA3pI/v75+fkFgT+SbwJZYYJxhZSskJIVUrJCSlZIyQopWSH15/jL119//9ri/vefwX3HX+2779RnH8aXGn926lKFxk9lXCElK6RkhZSsUFTbrlRkhfXaVJ24UglOlavXsACfeqrxpaYecsrU78q4QkpWSMkKKVmhp7Z9KJzlnPrsuMbsc9eVq1PF7CF/BeMKKVkhJSukZIUttW2fvqnYqbq4r1Pibit1+xhXSMkKKVkhJSt8vLZdqSK3FaQrRfS4geFMxhVSskJKVkjJCltq276KbOrKK60CYyuV7103Xzx13z7GFVKyQkpWSMkKPbXtts7Wwv/Rr0zjFn71YWX6eNtf4cG4QkpWSMkKKVkh9fsTZze8Vc317Uhwf6EJ4cG4QkpWSMkKKVmhqLadqsgO2Ya1cO516r5TCqeAtzUUG1dIyQopWSElK/TUtm+VnGOfOMrhwR5g/J95B5GSFVKyQk9PQt+U6Nhb+yT0dQ5cbfO2K8zbUsM7iJSskJIVtpxLtjL5WLgQ66Fwn9lDemavhQK88JmNK6RkhZSskJIV3lhL1jdve+bWB9cZzciFZ5qZt6WGdxApWSElK3xtn4SVNoMVfQXpvWvBm/1tOY53EClZISUrbFlLVrji65ClZX03ul8qdfUk8ALvIFKyQkpWKOq3/URfwbbHeOhbSvfWMRB6EqjhHURKVkjJCkW1beFGq31l8spDfuJIhattK7KpbzaukJIVUrJCSlbo2SfhrarqrRNqV6Zir7a2ipXHGDNvSw3vIFKyQkpW2FLbfmJN17Yy+W6rXsefLdz8d8y4QkpWSMkKKVmhp7YtnIucalb9xHFh1xlboPUxrpCSFVKyQkpW2HJ2w8pnCyvBbcejXXVTon0LwPp+fOMKKVkhJSukZIUte4CNvXVg7ZmulzbwHd9oinGFlKyQkhVSskJPbdt3MFfhwbGFlW9hZ+tD35lmff0bxhVSskJKVkjJClvWkq30zD6c+R/8ba4j58cfjCukZIWUrJCSFd5YS7at8fNhW6/uwyG9EIW7N4wZV0jJCilZISUrFPUkvGVbXTzl3rVtwpk3Mq6QkhVSskJKVug5l6xPX8PpW8ci3HUTpoWNE9aSsYN3EClZISUrnLcH2MO2Xb4K+wqutgVgY4WnQqyUycYVUrJCSlZIyQrnnUv21n4FU1ceu3etQ+tbWva48tSPYFwhJSukZIWUrLCltt2m71iElSaEe2ZGuLBcdeYup/MOIiUrpGSFj9e2fTOkhVv0XruOVjvkVAjjCilZISUrpGSFN/a3/YRtjQR3XRfwtjJ5zLhCSlZIyQopWWHL/rZ9+hZEFS5LuxYe45CjxqYYV0jJCilZISUrfHx/Ww5kXCElK6RkhZSskJIVUrJCSlZIyQopWeFX6D/GXuwEGb22hwAAAABJRU5ErkJggg==" width="100" height="100" alt="Scan to play">
+        <span class="sc-qr-label">Scan to play</span>
+    </div>
+    <div class="sc-footer">https://shrevatsa-saaimurugan.github.io/tables/</div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</body>
+</html>

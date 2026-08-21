@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Learn Tables</string>
+    <string name="title_activity_main">Learn Tables</string>
+    <string name="package_name">com.shrevatsa.mathtables</string>
+    <string name="custom_url_scheme">com.shrevatsa.mathtables</string>
+</resources>
