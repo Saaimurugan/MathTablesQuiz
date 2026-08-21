@@ -1,11 +1,11 @@
 const CACHE = 'math-tables-v1';
 const ASSETS = [
-  '/tables/',
-  '/tables/index.html',
-  '/tables/logo.png',
-  '/tables/logo-192.png',
-  '/tables/logo-512.png',
-  '/tables/manifest.json'
+  '/Tables/',
+  '/Tables/index.html',
+  '/Tables/logo.png',
+  '/Tables/logo-192.png',
+  '/Tables/logo-512.png',
+  '/Tables/manifest.json'
 ];
 
 // Install: pre-cache all assets
